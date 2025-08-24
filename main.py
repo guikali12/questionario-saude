@@ -4,6 +4,7 @@ from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import psycopg2
 import os
+import urllib.parse
 
 # Modelo para os dados que a API vai receber
 class Resposta(BaseModel):
@@ -13,14 +14,20 @@ class Resposta(BaseModel):
     altura: float
     doenca_cronica: bool
 
-# Conexão com o banco usando variáveis de ambiente
+# Conexão com o banco usando DATABASE_URL
 def connect():
+    db_url = os.getenv("DATABASE_URL")
+    if db_url is None:
+        raise Exception("Variável DATABASE_URL não está definida")
+
+    result = urllib.parse.urlparse(db_url)
+
     return psycopg2.connect(
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT")
+        dbname=result.path[1:],  # remove a barra inicial
+        user=result.username,
+        password=result.password,
+        host=result.hostname,
+        port=result.port
     )
 
 # Criar a aplicação FastAPI
