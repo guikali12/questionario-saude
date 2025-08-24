@@ -1,8 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
-from typing import List
 import psycopg2
+import os
 
 # Modelo para os dados que a API vai receber
 class Resposta(BaseModel):
@@ -12,14 +13,14 @@ class Resposta(BaseModel):
     altura: float
     doenca_cronica: bool
 
-# Conexão com o banco
+# Conexão com o banco usando variáveis de ambiente
 def connect():
     return psycopg2.connect(
-        dbname="saude_db",
-        user="postgres",
-        password="120901",
-        host="localhost",
-        port="5432"
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT")
     )
 
 # Criar a aplicação FastAPI
@@ -33,6 +34,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Endpoint para servir o formulário HTML
+@app.get("/", response_class=HTMLResponse)
+def serve_form():
+    with open("form.html", "r", encoding="utf-8") as f:
+        return f.read()
 
 # Endpoint para inserir dados
 @app.post("/responder/")
